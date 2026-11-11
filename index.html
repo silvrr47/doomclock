@@ -1,36 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8">
+<title>Doom Clock</title>
 <style>
   html,body{margin:0;height:100%;overflow:hidden;background:#000}
-  #wrap{position:absolute;top:50%;left:50%;width:118vw;height:118vh;
-        transform:translate(-50%,-50%);pointer-events:none}
+  #wrap{
+    position:absolute;top:50%;left:50%;
+    width:min(150vw,266.67vh);
+    height:min(150vh,84.375vw);
+    transform:translate(-50%,-50%) scale(0.667);
+    pointer-events:none;
+  }
   #player{width:100%;height:100%}
 </style>
 </head>
 <body>
 <div id="wrap"><div id="player"></div></div>
+
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 var p;
-function goLive(){ try{ p.seekTo(p.getDuration(), true); p.playVideo(); }catch(e){} }
+
+function goLive(){
+  try{ p.seekTo(p.getDuration(), true); p.playVideo(); }catch(e){}
+}
+
+function forceHD(){
+  try{ p.setPlaybackQuality('hd1080'); }catch(e){}
+}
+
 function onYouTubeIframeAPIReady(){
   p = new YT.Player('player',{
     videoId:'f17J3AXVK5w',
-    playerVars:{autoplay:1,mute:1,controls:0,modestbranding:1,rel:0,
-                iv_load_policy:3,disablekb:1,playsinline:1,fs:0,
-                origin:location.origin},
+    playerVars:{
+      autoplay:1, mute:1, controls:0, modestbranding:1, rel:0,
+      iv_load_policy:3, disablekb:1, playsinline:1, fs:0,
+      vq:'hd1080', origin:location.origin
+    },
     events:{
-      onReady:function(e){e.target.mute();e.target.playVideo();},
+      onReady:function(e){
+        e.target.mute();
+        e.target.playVideo();
+        forceHD();
+      },
       onStateChange:function(e){
-        if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.ENDED){goLive();}
+        if(e.data===YT.PlayerState.PLAYING){ forceHD(); }
+        if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.ENDED){ goLive(); }
       }
     }
   });
+
+  // If we drift more than 15s behind live, jump back
   setInterval(function(){
     try{
-      var behind = p.getDuration() - p.getCurrentTime();
-      if(behind > 15){ goLive(); }
+      if(p.getDuration() - p.getCurrentTime() > 15){ goLive(); }
     }catch(e){}
   }, 30000);
 }
